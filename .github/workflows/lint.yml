@@ -1,0 +1,59 @@
+name: Lint
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/lint.yml
+      - setup.cfg
+      - '.github/flake8/**'
+      - '.github/scripts/**'
+      - 'src/**'
+
+concurrency:
+  group: "deploy"
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint-critical:
+    runs-on: ubuntu-latest
+
+    if: ${{ always() }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install flake8
+        run: pip install -U flake8
+
+      - name: Run flake8 for critical bugs
+        run: |
+          python -m flake8 . --append-config .github/flake8/action.ini --append-config .github/flake8/action-critical.ini
+
+  lint-warnings:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install flake8
+        run: pip install -U flake8
+
+      - name: Run flake8 for other warnings
+        run: |
+          python -m flake8 . --append-config .github/flake8/action.ini

@@ -1,0 +1,43 @@
+name: PR Lint
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/pr_lint.yml
+      - setup.cfg
+      - '.github/flake8/**'
+      - 'src/**'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install flake8
+        run: pip install -U 'flake8<6.0.0'
+
+      - name: Flake8 Annotator
+        uses: rbialon/flake8-annotations@v1
+
+      - name: Run flake8 on PR diff
+        run: |
+          git rev-parse HEAD~1
+          diff_out="$(git diff -U0 HEAD~1 -- '*.py')"
+
+          python -m flake8 --diff --append-config .github/flake8/action.ini --append-config .github/flake8/action-critical.ini <<<"$diff_out"
+          python -m flake8 --diff --append-config .github/flake8/action.ini <<<"$diff_out"
